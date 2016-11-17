@@ -19,13 +19,16 @@ import hurdle1
 
 class hurdle_1(gr.top_block):
 
-    def __init__(self, EbNo_dB=15, frequency_offset_hz=100e3, host='127.0.0.1', iq_filename='iq.dat', iq_port=9094, packet_port=9095, rx_packet_filename='rx_packets.bin', timing_offset_ppm=20, truth_filename='truth.bin', tx_packet_filename='out_packets.bin'):
+    def __init__(self, EbNo_dB=15, NumBits=100000, MinGap=2040, MaxGap=4095, frequency_offset_hz=100e3, host='127.0.0.1', iq_filename='iq.dat', iq_port=9094, packet_port=9095, rx_packet_filename='rx_packets.bin', timing_offset_ppm=20, truth_filename='truth.bin', tx_packet_filename='out_packets.bin'):
         gr.top_block.__init__(self, "Hurdle 1")
 
         ##################################################
         # Parameters
         ##################################################
         self.EbNo_dB = EbNo_dB
+        self.NumBits = NumBits
+        self.MinGap = MinGap
+        self.MaxGap = MaxGap
         self.frequency_offset_hz = frequency_offset_hz
         self.host = host
         self.iq_filename = iq_filename
@@ -67,7 +70,7 @@ class hurdle_1(gr.top_block):
         self.hurdle1_tcp_server_source_0 = hurdle1.tcp_server_source(gr.sizeof_char, host, packet_port)
         self.hurdle1_tcp_server_sink_0 = hurdle1.tcp_server_sink(gr.sizeof_gr_complex, host, iq_port)
         self.hurdle1_tag_delay_0 = hurdle1.tag_delay(int(22*samps_per_sym))
-        self.hurdle1_random_packet_source_0 = hurdle1.random_packet_source(0x99999999, 0x1ACFFC1D, 100000, 2050, 4095, truth_filename)
+        self.hurdle1_random_packet_source_0 = hurdle1.random_packet_source(0x99999999, 0x1ACFFC1D, NumBits, MinGap, MaxGap, truth_filename)
         self.channels_channel_model_0 = channels.channel_model(
         	noise_voltage=noise_voltage,
         	frequency_offset=frequency_offset_hz/samp_rate,
@@ -210,6 +213,15 @@ def argument_parser():
         "", "--EbNo-dB", dest="EbNo_dB", type="eng_float", default=eng_notation.num_to_str(15),
         help="Set EbNo_dB [default=%default]")
     parser.add_option(
+        "", "--num-bits", dest="NumBits", type="intx", default=100000,
+        help="Set number of info bits to be genrated on tx[default=%default]")
+    parser.add_option(
+        "", "--min-gap", dest="MinGap", type="intx", default=2050,
+        help="Min gap between packets in samples[default=%default]")
+    parser.add_option(
+        "", "--max-gap", dest="MaxGap", type="intx", default=4095,
+        help="Max gap between packets in samples[default=%default]")
+    parser.add_option(
         "", "--frequency-offset-hz", dest="frequency_offset_hz", type="eng_float", default=eng_notation.num_to_str(100e3),
         help="Set frequency_offset_hz [default=%default]")
     parser.add_option(
@@ -243,7 +255,7 @@ def main(top_block_cls=hurdle_1, options=None):
     if options is None:
         options, _ = argument_parser().parse_args()
 
-    tb = top_block_cls(EbNo_dB=options.EbNo_dB, frequency_offset_hz=options.frequency_offset_hz, host=options.host, iq_filename=options.iq_filename, iq_port=options.iq_port, packet_port=options.packet_port, rx_packet_filename=options.rx_packet_filename, timing_offset_ppm=options.timing_offset_ppm, truth_filename=options.truth_filename, tx_packet_filename=options.tx_packet_filename)
+    tb = top_block_cls(EbNo_dB=options.EbNo_dB, NumBits=options.NumBits, MinGap=options.MinGap, MaxGap=options.MaxGap, frequency_offset_hz=options.frequency_offset_hz, host=options.host, iq_filename=options.iq_filename, iq_port=options.iq_port, packet_port=options.packet_port, rx_packet_filename=options.rx_packet_filename, timing_offset_ppm=options.timing_offset_ppm, truth_filename=options.truth_filename, tx_packet_filename=options.tx_packet_filename)
     tb.start()
     tb.wait()
 
